@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>S.N.A.P. Interface - Grace Replica</title>
+    <style>
+        :root {
+            /* El verde fósforo característico del juego */
+            --snap-green: #2fff71; 
+            --snap-dark: #020804;
+            --snap-glow: rgba(47, 255, 113, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-touch-callout: none; /* Desactivar menús contextuales en móvil */
+            -webkit-user-select: none;   /* Desactivar selección de texto */
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--snap-dark);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: none; /* Ocultar cursor para inmersión */
+        }
+
+        /* --- El Contenedor de la Pantalla --- */
+        #crt-screen {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #051109;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- Fondo 1: Ruido Estático y Scanlines (Fijo) --- */
+        #crt-screen::before {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 150px 100%; /* Líneas horizontales densas */
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* --- Fondo 2: Efecto de Ondas Flotantes (Animado) --- */
+        .waves {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 40px,
+                rgba(47, 255, 113, 0.03) 40px,
+                rgba(47, 255, 113, 0.03) 80px
+            );
+            z-index: 1;
+            animation: waveMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes waveMove {
+            0% { transform: translate(-25%, -25%) rotate(0deg); }
+            100% { transform: translate(0%, 0%) rotate(5deg); }
+        }
+
+        /* --- El Rostro de S.N.A.P. --- */
+        #face {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16vw; /* Tamaño dinámico según la pantalla */
+            font-weight: bold;
+            color: var(--snap-green);
+            text-shadow: 
+                0 0 10px var(--snap-glow),
+                0 0 20px var(--snap-glow);
+            z-index: 3;
+            transition: color 0.1s ease, text-shadow 0.1s ease;
+            white-space: nowrap;
+        }
+
+        /* Ajuste para pantallas muy grandes */
+        @media (min-width: 1000px) {
+            #face { font-size: 160px; }
+        }
+
+        /* --- Capa de Glitch/Parpadeo Global --- */
+        #glitch-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent;
+            z-index: 4;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .glitching #glitch-overlay {
+            animation: globalFlicker 0.2s infinite;
+        }
+
+        @keyframes globalFlicker {
+            0% { background: rgba(47, 255, 113, 0.05); opacity: 1; }
+            50% { background: rgba(255, 255, 255, 0.02); opacity: 0.8; }
+            100% { background: rgba(0, 0, 0, 0); opacity: 0; }
+        }
+
+        /* --- Estilo de Glitch para el Rostro --- */
+        .glitching #face {
+            animation: faceGlitch 0.1s infinite;
+            color: #ff3f3f !important; /* Rojo alerta */
+            text-shadow: 0 0 15px rgba(255, 63, 63, 0.7) !important;
+        }
+
+        @keyframes faceGlitch {
+            0% { transform: translate(2px, 1px) skewX(5deg); }
+            50% { transform: translate(-2px, -1px) skewX(-5deg); }
+            100% { transform: translate(0, 0) skewX(0deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="crt-screen">
+        <div class="waves"></div>
+        <div id="face">● _ ●</div>
+        <div id="glitch-overlay"></div>
+    </div>
+
+    <script>
+        const faceElement = document.getElementById('face');
+        const screenElement = document.getElementById('crt-screen');
+        let blinkInterval;
+        let happyTimeout;
+        let isGlitched = false;
+
+        // Definición exacta de expresiones (caracteres Unicode)
+        const expressions = {
+            neutral: "● _ ●",
+            blink: "– _ –",
+            happy: "^ _ ^",
+            alert: "● ⌂ ●",
+            glitch: "X _ X"
+        };
+
+        // --- Función central para cambiar rostros ---
+        function setFace(type) {
+            if (isGlitched) return; // No cambiar si está en modo error
+            faceElement.innerText = expressions[type];
+        }
+
+        // --- 1. Sistema de Parpadeo Automático ---
+        function startBlinking() {
+            clearInterval(blinkInterval);
+            blinkInterval = setInterval(() => {
+                if (faceElement.innerText === expressions.neutral) {
+                    setFace('blink');
+                    setTimeout(() => setFace('neutral'), 150);
+                }
+            }, 3500 + Math.random() * 2000); // Parpadeo aleatorio entre 3.5s y 5.5s
+        }
+
+        // --- 2. Interacción Táctil (Dedo/Ratón) ---
+        // Al interactuar: Rostro feliz instantáneo
+        function triggerHappy() {
+            if (isGlitched) return;
+            
+            setFace('happy');
+            
+            // Cancelar cualquier timeout previo para que no vuelva a neutral antes de tiempo
+            clearTimeout(happyTimeout);
+            
+            // Volver a neutral tras 1.5 segundos de inactividad
+            happyTimeout = setTimeout(() => {
+                setFace('neutral');
+            }, 1500);
+        }
+
+        // Eventos de Ratón
+        screenElement.addEventListener('mousemove', triggerHappy);
+        
+        // Eventos Táctiles (Móvil)
+        screenElement.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Previene scroll/zoom
+            triggerHappy();
+        });
+        screenElement.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            triggerHappy();
+        });
+
+        // --- 3. Sistema de Glitch (Opcional, pero fiel al juego) ---
+        // Para activarlo, llama a 'triggerGlitch()' desde la consola
+        function triggerGlitch(duration = 2000) {
+            isGlitched = true;
+            document.body.classList.add('glitching');
+            faceElement.innerText = expressions.glitch;
+
+            setTimeout(() => {
+                isGlitched = false;
+                document.body.classList.remove('glitching');
+                setFace('neutral');
+            }, duration);
+        }
+
+        // Inicialización
+        startBlinking();
+        
+    </script>
+</body>
+</html>
